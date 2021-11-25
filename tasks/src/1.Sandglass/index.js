@@ -8,18 +8,35 @@ import RoundButton, { RESTART_SIGN } from './components/RoundButton';
 import Timer from './components/Timer';
 import Sandglass from './components/Sandglass';
 
-// const appStore = ...;
+const appStore = createStore(timerReducer);
+
+setInterval(() => {
+  appStore.dispatch(changeSeconds(-0.25));
+}, 250);
 
 class App extends React.Component {
-  state = { seconds: 15 };
+  state = this.props.store.getState();
+
+  componentDidMount() {
+    this.unsubscribe = this.props.store.subscribe(() => {
+      this.setState(this.props.store.getState());
+    });
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
+  }
 
   handleDecrease = () => {
-    this.setState(prevState => ({ seconds: prevState.seconds - 1 }));
+    this.props.store.dispatch(changeSeconds(-1));
   };
 
   handleIncrease = () => {
-    this.setState(prevState => ({ seconds: prevState.seconds + 1 }));
+    this.props.store.dispatch(changeSeconds(+1));
   };
+  handleRestart = () => {
+    this.props.store.dispatch(restart());
+  }
 
   render() {
     return (
@@ -29,13 +46,19 @@ class App extends React.Component {
           onDecrease={this.handleDecrease}
           onIncrease={this.handleIncrease}
         />
+        <Sandglass
+          seconds={this.state.seconds}
+        />
+        <RoundButton
+          content={RESTART_SIGN} onClick={this.handleRestart}
+        />
       </div>
     );
   }
 }
 
 App.propTypes = {
-  //store: PropTypes.object.isRequired,
+  store: PropTypes.object.isRequired,
 };
 
-ReactDom.render(<App />, document.getElementById('app'));
+ReactDom.render(<App store={appStore}/>, document.getElementById('app'));
